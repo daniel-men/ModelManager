@@ -23,31 +23,27 @@ class ModelManager:
         self.timestamp = "{}".format(datetime.datetime.now()).replace(" ", "_").replace(":", "_").replace(".", "_")
         return self.timestamp
 
-    def fit(self, **kwargs):
+    def _fit(self, kwargs, gen=False):
         self.create_timestamp()
         self.get_compile_params()
         self.get_fit_params(kwargs)
 
         self.check_for_existing_runs(json.dumps(self.key_params))
-        history = self.model.fit(**kwargs)
+        if gen:
+            history = self.model.fit_generator(**kwargs)
+        else:
+            history = self.model.fit(**kwargs)
  
         self.log()
 
         if self.save_history:
             self.save_history_pickle(history)
+
+    def fit(self, **kwargs):
+        self._fit(kwargs)
 
     def fit_generator(self, **kwargs):
-        self.create_timestamp()
-        self.get_compile_params()
-        self.get_fit_params(kwargs)
-
-        self.check_for_existing_runs(json.dumps(self.key_params))
-        history = self.model.fit_generator(**kwargs)
- 
-        self.log()
-
-        if self.save_history:
-            self.save_history_pickle(history)
+        self._fit(kwargs, gen=True)
 
     def get_compile_params(self):
         optimizer_config = self.model.optimizer.get_config()
