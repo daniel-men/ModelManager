@@ -36,6 +36,12 @@ class TestModelManagerSet(unittest.TestCase):
         self.mm.model = Sequential()
         self.assertIsNotNone(self.mm.model)
 
+    def test_set_description(self):
+        self.assertIsNone(self.mm.description)
+
+        self.mm.description = "Test Run Model 123"
+        self.assertEqual(self.mm.description, "Test Run Model 123")
+
 
 class TestModelManagerModelFunctions(unittest.TestCase):
     def setUp(self):
@@ -54,6 +60,7 @@ class TestModelManagerModelFunctions(unittest.TestCase):
         x = [1, 2, 3, 4, 5]
         y = [1, 2, 3, 4, 5]
         self.mm.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.01), loss='mse')
+        self.mm.description = "Test on numeric data, two hidden layers"
 
         self.mm.fit(x=x, y=y, batch_size=1, epochs=3)
 
@@ -62,10 +69,10 @@ class TestModelManagerModelFunctions(unittest.TestCase):
         
         with open(json_path, 'r') as json_file:
             json_config = json.load(json_file)
-            print(json_config)
             self.assertEqual(json_config["batch_size"], 1)
             self.assertEqual(json_config["epochs"], 3)
             self.assertEqual(json_config["optimizer"]["learning_rate"], 0.01)
+            self.assertEqual(json_config["description"], "Test on numeric data, two hidden layers")
 
     def test_exisiting_config_exception(self):
         self.mm.model = self.simple_model

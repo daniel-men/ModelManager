@@ -7,11 +7,13 @@ import os
 from utils import ConfigurationAlreadyExistsError
 
 class ModelManager:
-    def __init__(self, log_dir):
+    def __init__(self, log_dir, model=None, save_history=False, save_weights=False, save_model=False):
         self._log_dir = log_dir
-        self._model = None
+        self._model = model
         self.key_params = {}
-        self._save_history = False
+        self._save_history = save_history
+        self._save_weights = save_weights
+        self._save_model = save_model
         self.timestamp = None
 
         if not os.path.exists(self._log_dir):
@@ -50,7 +52,6 @@ class ModelManager:
     def get_compile_params(self):
         optimizer_config = self.model.optimizer.get_config()
         self.key_params["optimizer"] = optimizer_config
-        print(self.model.optimizer.lr.numpy())
         self.key_params["optimizer"]["learning_rate"] = float(str(self.model.optimizer.lr.numpy()))
         if 'name' not in optimizer_config.keys():
             opt_name = str(self.model.optimizer.__class__).split('.')[-1] \
@@ -65,6 +66,17 @@ class ModelManager:
     @save_history.setter
     def save_history(self, save_history):
         self._save_history = save_history
+
+    @property
+    def description(self):
+        if "description" in self.key_params:
+            return self.key_params["description"]
+        else:
+            return None
+
+    @description.setter
+    def description(self, description):
+        self.key_params["description"] = description
 
     @property
     def model(self):
