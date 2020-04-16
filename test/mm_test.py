@@ -1,7 +1,7 @@
 import unittest
 import os
 import shutil
-import sys
+#import sys
 import json
 import glob
 import pickle
@@ -10,9 +10,9 @@ import keras
 from keras.models import Sequential
 from keras.layers import Dense
 
-sys.path.append(os.path.abspath("../src/"))
+#sys.path.append(os.path.abspath("../src/"))
 
-from ModelManager import ModelManager, ConfigurationAlreadyExistsError
+from src.ModelManager import ModelManager, ConfigurationAlreadyExistsError
 
 
 class TestModelManagerSet(unittest.TestCase):

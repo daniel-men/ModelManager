@@ -4,7 +4,7 @@ import datetime
 import glob
 import os
 
-from utils import ConfigurationAlreadyExistsError
+from .utils import ConfigurationAlreadyExistsError
 
 class ModelManager:
     def __init__(self, log_dir, model=None, save_history=False, save_weights=False, save_model=False):
