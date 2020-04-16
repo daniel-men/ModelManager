@@ -1,6 +1,2 @@
-pickle
-json
-glob
-numpy
-tensorflow
 keras
+tensorflow
