@@ -1,5 +1,5 @@
 # ModelManager
-
+Wrapper for keras models to ensure logging and reproducibility
 ```python
 import keras
 from keras.models import Sequential
