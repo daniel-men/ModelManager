@@ -3,6 +3,7 @@ import json
 import datetime
 import glob
 import os
+import dill
 
 from .utils import ConfigurationAlreadyExistsError
 
@@ -15,6 +16,7 @@ class ModelManager:
         self._save_weights = save_weights
         self._save_model = save_model
         self.timestamp = None
+        self.overwrite = False
 
         if not os.path.exists(self._log_dir):
             os.mkdir(self._log_dir)
@@ -53,7 +55,10 @@ class ModelManager:
             opt_name = str(self.model.optimizer.__class__).split('.')[-1] \
                 .replace('\'', '').replace('>', '')
             self.key_params["optimizer"]["name"] = opt_name
-        self.key_params["loss"] = self.model.loss
+        if callable(self.model.loss):
+            self.key_params['loss'] = list(dill.dumps(self.model.loss))
+        else:
+            self.key_params["loss"] = self.model.loss
 
     @property
     def save_history(self):
@@ -116,7 +121,7 @@ class ModelManager:
                 with open(os.path.join(folder, "config.json")) as conf_file:
                     existing_conf = json.load(conf_file)
                     existing_conf = json.dumps(existing_conf)
-                    if existing_conf == json_conf:
+                    if existing_conf == json_conf and not self.overwrite:
                         raise ConfigurationAlreadyExistsError("Configuraiton already exists in {}".format(folder))
     
     def save_history_pickle(self, history):

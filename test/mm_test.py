@@ -1,16 +1,16 @@
 import unittest
 import os
 import shutil
-#import sys
 import json
 import glob
 import pickle
 
+import dill
 import keras
 from keras.models import Sequential
 from keras.layers import Dense
-
-#sys.path.append(os.path.abspath("../src/"))
+import keras.backend as K
+import numpy as np
 
 from src.ModelManager import ModelManager, ConfigurationAlreadyExistsError
 
@@ -109,11 +109,35 @@ class TestModelManagerModelFunctions(unittest.TestCase):
             history = pickle.load(pickle_file)
             self.assertTrue(len(history["loss"]) == 3)
 
+    def test_save_custom_loss(self):
+        self.mm.model = self.simple_model
+        x = [1, 2, 3, 4, 5]
+        y = [1, 2, 3, 4, 5]
+        self.mm.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.01), loss=rmse)
+
+        self.mm.save_history = True
+        self.mm.fit(x=x, y=y, batch_size=1, epochs=3)
+
+        json_path = os.path.join(self.test_path, self.mm.timestamp, "config.json")
+        self.assertTrue(os.path.isfile(json_path))
+        
+        with open(json_path, 'r') as json_file:
+            json_config = json.load(json_file)
+            loss_func = dill.loads(bytearray(json_config["loss"]))
+            self.assertTrue(callable(loss_func))
+
+            self.mm.overwrite = True
+            self.mm.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.01), loss=loss_func)
+            self.mm.fit(x=x, y=y, batch_size=1, epochs=3)
+
 def simple_model():
     model = Sequential()
     model.add(Dense(2, input_dim=1, activation='relu'))
     model.add(Dense(1, activation='sigmoid'))
     return model
+
+def rmse(y_true, y_pred): 
+    return K.sqrt(K.mean(K.square(y_pred - y_true)))
 
 if __name__ == '__main__':
     unittest.main()
