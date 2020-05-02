@@ -13,6 +13,7 @@ import keras.backend as K
 import numpy as np
 
 from src.ModelManager import ModelManager, ConfigurationAlreadyExistsError
+from src.utils import deserialize_function
 
 
 class TestModelManagerSet(unittest.TestCase):
@@ -123,12 +124,36 @@ class TestModelManagerModelFunctions(unittest.TestCase):
         
         with open(json_path, 'r') as json_file:
             json_config = json.load(json_file)
-            loss_func = dill.loads(bytearray(json_config["loss"]))
+            loss_func = deserialize_function(json_config["loss"])
             self.assertTrue(callable(loss_func))
 
             self.mm.overwrite = True
             self.mm.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.01), loss=loss_func)
             self.mm.fit(x=x, y=y, batch_size=1, epochs=3)
+
+    def test_callback_saving(self):
+        self.mm.model = self.simple_model
+        x = [1, 2, 3, 4, 5]
+        y = [1, 2, 3, 4, 5]
+        self.mm.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.01), loss='mse')
+        es = keras.callbacks.EarlyStopping(monitor='loss', patience=1, verbose=1)
+        es_2 = keras.callbacks.EarlyStopping(monitor='loss', patience=3, verbose=1)
+
+        self.mm.fit(x=x, y=y, batch_size=1, epochs=3, callbacks=[es, es_2])
+
+        json_path = os.path.join(self.test_path, self.mm.timestamp, "config.json")
+        self.assertTrue(os.path.isfile(json_path))
+
+        with open(json_path, 'r') as json_file:
+            json_config = json.load(json_file)
+            self.assertTrue("callbacks" in json_config)
+            self.assertTrue(len(json_config["callbacks"]) == 2)
+            deserialized_callbacks = deserialize_function(json_config["callbacks"])
+            self.mm.overwrite = True
+            self.mm.fit(x=x, y=y, batch_size=1, epochs=3, callbacks=deserialized_callbacks)
+
+
+
 
 def simple_model():
     model = Sequential()

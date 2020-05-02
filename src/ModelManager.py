@@ -3,9 +3,8 @@ import json
 import datetime
 import glob
 import os
-import dill
 
-from .utils import ConfigurationAlreadyExistsError
+from .utils import ConfigurationAlreadyExistsError, serialize_function, deserialize_function
 
 class ModelManager:
     def __init__(self, log_dir, model=None, save_history=False, save_weights=False, save_model=False):
@@ -56,7 +55,7 @@ class ModelManager:
                 .replace('\'', '').replace('>', '')
             self.key_params["optimizer"]["name"] = opt_name
         if callable(self.model.loss):
-            self.key_params['loss'] = list(dill.dumps(self.model.loss))
+            self.key_params['loss'] = serialize_function(self.model.loss)
         else:
             self.key_params["loss"] = self.model.loss
 
@@ -101,17 +100,20 @@ class ModelManager:
             json.dump(self.key_params, json_file)
 
     def get_fit_params(self, kwargs):
+        self.key_params["epochs"] = kwargs["epochs"]
+
         if "batch_size" in kwargs:
             self.key_params["batch_size"] = kwargs["batch_size"]
         else:
             self.key_params["batch_size"] = 32
 
-        self.key_params["epochs"] = kwargs["epochs"]
+        if "callbacks" in kwargs:
+            self.key_params["callbacks"] = serialize_function(kwargs["callbacks"])
         
         opt_params = ["class_weight", "sample_weight"]
         
-        for param in opt_params:
-            if param in kwargs:
+        for param in kwargs:
+            if param not in self.key_params:
                 self.key_params[param] = kwargs[param]
 
 
