@@ -113,7 +113,7 @@ class ModelManager:
         opt_params = ["class_weight", "sample_weight"]
         
         for param in kwargs:
-            if param not in self.key_params:
+            if param not in self.key_params and param not in ["x", "y", "generator"]:
                 self.key_params[param] = kwargs[param]
 
 

@@ -5,15 +5,12 @@ import json
 import glob
 import pickle
 
-import dill
 import keras
-from keras.models import Sequential
-from keras.layers import Dense
-import keras.backend as K
 import numpy as np
 
 from src.ModelManager import ModelManager, ConfigurationAlreadyExistsError
 from src.utils import deserialize_function
+from test_utils import simple_model, rmse, SimpleGenerator
 
 
 class TestModelManagerSet(unittest.TestCase):
@@ -34,7 +31,7 @@ class TestModelManagerSet(unittest.TestCase):
 
     def test_set_model(self):
         self.assertIsNone(self.mm.model)
-        self.mm.model = Sequential()
+        self.mm.model = keras.models.Sequential()
         self.assertIsNotNone(self.mm.model)
 
     def test_set_description(self):
@@ -74,6 +71,21 @@ class TestModelManagerModelFunctions(unittest.TestCase):
             self.assertEqual(json_config["epochs"], 3)
             self.assertEqual(json_config["optimizer"]["learning_rate"], 0.01)
             self.assertEqual(json_config["description"], "Test on numeric data, two hidden layers")
+
+    def test_model_fit_generator(self):
+        self.mm.model = self.simple_model
+        x = np.asarray([1, 2, 3, 4, 5])
+        y = np.asarray([1, 2, 3, 4, 5])
+        self.mm.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.01), loss='mse')
+        gen = SimpleGenerator(x, y, 1)
+        self.mm.fit_generator(generator=gen, steps_per_epoch=1, epochs=3)
+
+        json_path = os.path.join(self.test_path, self.mm.timestamp, "config.json")
+        self.assertTrue(os.path.isfile(json_path))
+        with open(json_path, 'r') as json_file:
+            json_config = json.load(json_file)
+            self.assertEqual(json_config["steps_per_epoch"], 1)
+
 
     def test_exisiting_config_exception(self):
         self.mm.model = self.simple_model
@@ -152,17 +164,6 @@ class TestModelManagerModelFunctions(unittest.TestCase):
             self.mm.overwrite = True
             self.mm.fit(x=x, y=y, batch_size=1, epochs=3, callbacks=deserialized_callbacks)
 
-
-
-
-def simple_model():
-    model = Sequential()
-    model.add(Dense(2, input_dim=1, activation='relu'))
-    model.add(Dense(1, activation='sigmoid'))
-    return model
-
-def rmse(y_true, y_pred): 
-    return K.sqrt(K.mean(K.square(y_pred - y_true)))
 
 if __name__ == '__main__':
     unittest.main()
