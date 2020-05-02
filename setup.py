@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 
 setup(
-    name="KerasModelManager-pkg-dan_men",
+    name="KerasModelManager",
     version="0.0.1",
     author="Daniel Mensing",
     author_email="daniel.mensing@gmx.net",
