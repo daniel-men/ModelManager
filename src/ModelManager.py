@@ -40,10 +40,20 @@ class ModelManager:
         if self.save_history:
             self.save_history_pickle(history)
 
+        if self._save_model:
+            self.model.save(os.path.join(self.log_dir, self.timestamp, "model.h5"))
+
+        if self._save_weights:
+            self.model.save_weights(os.path.join(self.log_dir, self.timestamp, "weights.h5"))
+
     def fit(self, **kwargs):
+        """Wrapper for Sequential.fit()
+        """
         self._fit(kwargs)
 
     def fit_generator(self, **kwargs):
+        """Wrapper for Sequential.fit_generator()
+        """
         self._fit(kwargs, gen=True)
 
     def get_compile_params(self):
@@ -95,11 +105,18 @@ class ModelManager:
         self._log_dir = log_dir
 
     def log(self):
+        """Save parameters as JSON
+        """
         os.mkdir(os.path.join(self.log_dir, self.timestamp))
         with open(os.path.join(self.log_dir, self.timestamp, "config.json"), 'w') as json_file:
             json.dump(self.key_params, json_file)
 
     def get_fit_params(self, kwargs):
+        """Extract parameters supplied during fit() or fit_generator() call
+
+        Arguments:
+            kwargs {[type]} -- [description]
+        """
         self.key_params["epochs"] = kwargs["epochs"]
 
         if "batch_size" in kwargs:
@@ -118,6 +135,14 @@ class ModelManager:
 
 
     def check_for_existing_runs(self, json_conf):
+        """Check if already existing runs with the same configuration were logged
+
+        Arguments:
+            json_conf {[type]} -- Current Parameters as JSON object
+
+        Raises:
+            ConfigurationAlreadyExistsError: Raised if the current parameter configuration had already been run before
+        """
         for folder in glob.glob(os.path.join(self.log_dir, "*")):
             if os.path.isdir(folder):
                 with open(os.path.join(folder, "config.json")) as conf_file:

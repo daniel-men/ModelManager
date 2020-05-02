@@ -122,6 +122,31 @@ class TestModelManagerModelFunctions(unittest.TestCase):
             history = pickle.load(pickle_file)
             self.assertTrue(len(history["loss"]) == 3)
 
+    def test_save_model(self):
+        self.mm.model = self.simple_model
+        self.mm._save_model = True
+        x = [1, 2, 3, 4, 5]
+        y = [1, 2, 3, 4, 5]
+        self.mm.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.01), loss='mse')
+        self.mm.save_history = True
+        self.mm.fit(x=x, y=y, batch_size=1, epochs=3)
+
+        model_path = os.path.join(self.test_path, self.mm.timestamp, "model.h5")
+        self.assertTrue(os.path.isfile(model_path))
+
+    def test_save_weights(self):
+        self.mm.model = self.simple_model
+        self.mm._save_weights = True
+        x = [1, 2, 3, 4, 5]
+        y = [1, 2, 3, 4, 5]
+        self.mm.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.01), loss='mse')
+        self.mm.save_history = True
+        self.mm.fit(x=x, y=y, batch_size=1, epochs=3)
+
+        weights_path = os.path.join(self.test_path, self.mm.timestamp, "weights.h5")
+        self.assertTrue(os.path.isfile(weights_path))
+
+
     def test_save_custom_loss(self):
         self.mm.model = self.simple_model
         x = [1, 2, 3, 4, 5]

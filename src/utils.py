@@ -1,6 +1,11 @@
 import dill
 
 def serialize_function(func):
+    """Serialize a function to a list of ints represnting a byte sequence
+
+    Arguments:
+        func {[function]} -- function of list of functions
+    """
     def _serialize(f):
         return list(dill.dumps(func))
 
@@ -10,6 +15,11 @@ def serialize_function(func):
         return _serialize(func)
 
 def deserialize_function(func_str):
+    """Deserialize a  string of list of ints to a function
+
+    Arguments:
+        func_str {[string or list of strings]} -- String or list of strings
+    """
     def _deserialize(f_s):
         return dill.loads(bytearray(f_s))
 
