@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="KerasModelManager",
-    version="0.0.4",
+    version="0.0.5",
     author="Daniel Mensing",
     author_email="daniel.mensing@gmx.net",
     description="A wrapper for Keras models",
