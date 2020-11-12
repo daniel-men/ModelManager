@@ -8,8 +8,8 @@ import pickle
 import keras
 import numpy as np
 
-from src.ModelManager import ModelManager, ConfigurationAlreadyExistsError
-from src.utils import deserialize_function
+from KerasModelManager.ModelManager import ModelManager, ConfigurationAlreadyExistsError
+from KerasModelManager.utils import deserialize_function
 from test_utils import simple_model, rmse, SimpleGenerator
 
 
