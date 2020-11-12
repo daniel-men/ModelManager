@@ -4,7 +4,7 @@ import datetime
 import glob
 import os
 
-from .utils import ConfigurationAlreadyExistsError, serialize_function, deserialize_function
+from .utils import ConfigurationAlreadyExistsError, serialize_function, deserialize_function, prepare_for_json
 
 class ModelManager:
     def __init__(self, log_dir, model=None, save_history=False, save_weights=False, save_model=False):
@@ -29,7 +29,8 @@ class ModelManager:
         self.get_compile_params()
         self.get_fit_params(kwargs)
 
-        self.check_for_existing_runs(json.dumps(self.key_params))
+        prepared_params = prepare_for_json(self.key_params)
+        self.check_for_existing_runs(json.dumps(prepared_params))
         if gen:
             history = self.model.fit_generator(**kwargs)
         else:
@@ -59,7 +60,7 @@ class ModelManager:
     def get_compile_params(self):
         optimizer_config = self.model.optimizer.get_config()
         self.key_params["optimizer"] = optimizer_config
-        self.key_params["optimizer"]["learning_rate"] = str(self.model.optimizer.lr.numpy())
+        self.key_params["optimizer"]["learning_rate"] = self.model.optimizer.lr.numpy()
         if 'name' not in optimizer_config.keys():
             opt_name = str(self.model.optimizer.__class__).split('.')[-1] \
                 .replace('\'', '').replace('>', '')

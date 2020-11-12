@@ -1,4 +1,6 @@
 import dill
+import json
+import numpy as np
 
 def serialize_function(func):
     """Serialize a function to a list of ints represnting a byte sequence
@@ -27,7 +29,17 @@ def deserialize_function(func_str):
         return [_deserialize(f_s) for f_s in func_str][0]
     else:
         return _deserialize(func_str)
+
+def prepare_for_json(params):
+    for key in params:
+        if type(params[key]) == np.float32:
+            str_repr = str(params[key])
+            digits = len(str_repr.split(".")[-1])
+            params[key] = round(params[key].tolist(), digits)
+        if type(params[key]) == dict:
+            params[key] = prepare_for_json(params[key])
     
+    return params
 
 class ConfigurationAlreadyExistsError(Exception):
     def __init__(self, message):

@@ -12,6 +12,7 @@ def simple_model():
     return model
 
 def rmse(y_true, y_pred): 
+    y_true = K.cast(y_true, 'float32')
     return K.sqrt(K.mean(K.square(y_pred - y_true)))
 
 class SimpleGenerator(Sequence):
