@@ -58,7 +58,7 @@ class ModelManager:
 
     def get_compile_params(self):
         optimizer_config = self.model.optimizer.get_config()
-        self.key_params["optimizer"] = str(optimizer_config)
+        self.key_params["optimizer"] = optimizer_config
         self.key_params["optimizer"]["learning_rate"] = str(self.model.optimizer.lr.numpy())
         if 'name' not in optimizer_config.keys():
             opt_name = str(self.model.optimizer.__class__).split('.')[-1] \

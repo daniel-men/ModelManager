@@ -69,7 +69,7 @@ class TestModelManagerModelFunctions(unittest.TestCase):
             json_config = json.load(json_file)
             self.assertEqual(json_config["batch_size"], 1)
             self.assertEqual(json_config["epochs"], 3)
-            self.assertEqual(json_config["optimizer"]["learning_rate"], 0.01)
+            self.assertEqual(json_config["optimizer"]["learning_rate"], str(0.01))
             self.assertEqual(json_config["description"], "Test on numeric data, two hidden layers")
 
     def test_model_fit_generator(self):
