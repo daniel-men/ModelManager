@@ -14,27 +14,37 @@ class ModelManager:
         self._save_history = save_history
         self._save_weights = save_weights
         self._save_model = save_model
-        self.timestamp = None
         self.overwrite = False
+        self._save_path = None
+        self._timestamp = None
 
         if not os.path.exists(self._log_dir):
             os.mkdir(self._log_dir)
 
     def create_timestamp(self):
-        self.timestamp = "{}".format(datetime.datetime.now()).replace(" ", "_").replace(":", "_").replace(".", "_")
-        return self.timestamp
+        """Creates a new timestamp string
 
-    def _fit(self, kwargs, gen=False):
+        Returns:
+            [String]: [timestamp]
+        """
+        self._timestamp = "{}".format(datetime.datetime.now()).replace(" ", "_").replace(":", "_").replace(".", "_")
+        return self._timestamp
+
+    def _fit(self, kwargs):
+        """[summary]
+
+        Args:
+            kwargs ([type]): [description]
+        """
         self.create_timestamp()
+        self.save_path
         self.get_compile_params()
         self.get_fit_params(kwargs)
 
         prepared_params = prepare_for_json(self.key_params)
         self.check_for_existing_runs(json.dumps(prepared_params))
-        if gen:
-            history = self.model.fit_generator(**kwargs)
-        else:
-            history = self.model.fit(**kwargs)
+
+        history = self.model.fit(**kwargs)
  
         self.log()
 
@@ -52,11 +62,6 @@ class ModelManager:
         """
         self._fit(kwargs)
 
-    def fit_generator(self, **kwargs):
-        """Wrapper for Sequential.fit_generator()
-        """
-        self._fit(kwargs, gen=True)
-
     def get_compile_params(self):
         optimizer_config = self.model.optimizer.get_config()
         self.key_params["optimizer"] = optimizer_config
@@ -69,6 +74,22 @@ class ModelManager:
             self.key_params['loss'] = serialize_function(self.model.loss)
         else:
             self.key_params["loss"] = self.model.loss
+
+    @property
+    def timestamp(self):
+        if self._timestamp is None:
+            self.create_timestamp()
+        return self._timestamp
+
+    @property
+    def save_path(self):
+        if self._save_path is None or self.timestamp not in self._save_path:
+            self._save_path = os.path.join(self.log_dir, self.timestamp)
+        
+        if not os.path.exists(self._save_path):
+            os.mkdir(self._save_path)
+        
+        return self._save_path
 
     @property
     def save_history(self):
@@ -108,8 +129,7 @@ class ModelManager:
     def log(self):
         """Save parameters as JSON
         """
-        os.mkdir(os.path.join(self.log_dir, self.timestamp))
-        with open(os.path.join(self.log_dir, self.timestamp, "config.json"), 'w') as json_file:
+        with open(os.path.join(self.save_path, "config.json"), 'w') as json_file:
             json.dump(self.key_params, json_file)
 
     def get_fit_params(self, kwargs):
@@ -127,6 +147,13 @@ class ModelManager:
 
         if "callbacks" in kwargs:
             self.key_params["callbacks"] = serialize_function(kwargs["callbacks"])
+
+        if "validation_data" in kwargs:
+            self.validation_data = kwargs["validation_data"]
+            validation_data_path = os.path.join(self.save_path, "validation_data.p")
+            with open(validation_data_path, 'wb') as pickle_file:
+                pickle.dump(kwargs["validation_data"], pickle_file)
+            self.key_params["validation_data"] = validation_data_path
         
         opt_params = ["class_weight", "sample_weight"]
         
@@ -145,7 +172,7 @@ class ModelManager:
             ConfigurationAlreadyExistsError: Raised if the current parameter configuration had already been run before
         """
         for folder in glob.glob(os.path.join(self.log_dir, "*")):
-            if os.path.isdir(folder):
+            if os.path.isdir(folder) and not self.save_path == folder:
                 with open(os.path.join(folder, "config.json")) as conf_file:
                     existing_conf = json.load(conf_file)
                     existing_conf = json.dumps(existing_conf)
@@ -153,6 +180,6 @@ class ModelManager:
                         raise ConfigurationAlreadyExistsError("Configuraiton already exists in {}".format(folder))
     
     def save_history_pickle(self, history):
-        with open(os.path.join(self.log_dir, self.timestamp, "history.p"), 'wb') as pickle_file:
+        with open(os.path.join(self.save_path, "history.p"), 'wb') as pickle_file:
             pickle.dump(history.history, pickle_file)
 

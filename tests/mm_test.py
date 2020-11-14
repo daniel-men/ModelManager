@@ -15,7 +15,7 @@ from test_utils import simple_model, rmse, SimpleGenerator
 
 class TestModelManagerSet(unittest.TestCase):
     def setUp(self):
-        self.test_path = os.path.abspath(os.path.join("..", "test_dir"))
+        self.test_path = os.path.abspath(os.path.join(".", "test_dir"))
         if not os.path.exists(self.test_path):
             os.mkdir(self.test_path)
         self.mm = ModelManager(self.test_path)
@@ -44,7 +44,7 @@ class TestModelManagerSet(unittest.TestCase):
 
 class TestModelManagerModelFunctions(unittest.TestCase):
     def setUp(self):
-        self.test_path = os.path.abspath(os.path.join("..", "test_dir"))
+        self.test_path = os.path.abspath(os.path.join(".", "test_dir"))
         if not os.path.exists(self.test_path):
             os.mkdir(self.test_path)
         self.mm = ModelManager(self.test_path)
@@ -80,7 +80,7 @@ class TestModelManagerModelFunctions(unittest.TestCase):
         y = np.asarray([1, 2, 3, 4, 5])
         self.mm.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.01), loss='mse')
         gen = SimpleGenerator(x, y, 1)
-        self.mm.fit_generator(generator=gen, steps_per_epoch=1, epochs=3)
+        self.mm.fit(x=gen, steps_per_epoch=1, epochs=3)
 
         json_path = os.path.join(self.test_path, self.mm.timestamp, "config.json")
         self.assertTrue(os.path.isfile(json_path))
@@ -190,6 +190,20 @@ class TestModelManagerModelFunctions(unittest.TestCase):
             deserialized_callbacks = deserialize_function(json_config["callbacks"])
             self.mm.overwrite = True
             self.mm.fit(x=x, y=y, batch_size=1, epochs=3, callbacks=deserialized_callbacks)
+
+    def test_validation_data(self):
+        self.mm.model = self.simple_model
+        x = [1, 2, 3, 4, 5]
+        y = [1, 2, 3, 4, 5]
+        val = (np.array([2, 3, 4, 1]), np.array([0.7, 1, 3, 0.5]))
+        self.mm.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.01), loss='mse')
+        self.mm.fit(x=x, y=y, validation_data=val, batch_size=1, epochs=3)
+        json_path = os.path.join(self.test_path, self.mm.timestamp, "config.json")
+        self.assertTrue(os.path.isfile(json_path))
+
+        with open(json_path, 'r') as json_file:
+            json_config = json.load(json_file)
+            self.assertTrue("validation_data" in json_config)
 
 
 if __name__ == '__main__':

@@ -6,14 +6,14 @@ with open("README.md", "r") as fh:
 
 setup(
     name="KerasModelManager",
-    version="0.0.5",
+    version="0.0.6",
     author="Daniel Mensing",
     author_email="daniel.mensing@gmx.net",
     description="A wrapper for Keras models",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/daniel-men/ModelManager",
-    download_url = '',
+    download_url = 'https://github.com/daniel-men/ModelManager/archive/0.0.6.tar.gz',
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -21,4 +21,10 @@ setup(
         "Operating System :: OS Independent",
     ],
     python_requires='>=3.6',
+    install_requires=[
+        'numpy',
+        'dill',
+        'keras',
+        'tensorflow'
+    ]
 )
