@@ -44,10 +44,10 @@ class ModelManager:
         prepared_params = prepare_for_json(self.key_params)
         self.check_for_existing_runs(json.dumps(prepared_params))
 
-        history = self.model.fit(**kwargs)
- 
         self.log()
 
+        history = self.model.fit(**kwargs)
+ 
         if self.save_history:
             self.save_history_pickle(history)
 
