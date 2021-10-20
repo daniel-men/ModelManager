@@ -1,6 +1,11 @@
 import dill
 import json
 import numpy as np
+from datetime import datetime
+
+
+def create_timestamp() -> str:
+    return "{}".format(datetime.now()).replace(" ", "_").replace(":", "_").replace(".", "_")
 
 def serialize_function(func):
     """Serialize a function to a list of ints represnting a byte sequence

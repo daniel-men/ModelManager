@@ -4,9 +4,13 @@ import shutil
 import json
 import glob
 import pickle
+from tensorflow.keras import callbacks
 
-import keras
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.optimizers import Adam
 import numpy as np
+from tensorflow.python.keras.callbacks import TensorBoard
 
 from KerasModelManager.ModelManager import ModelManager, ConfigurationAlreadyExistsError
 from KerasModelManager.utils import deserialize_function
@@ -32,7 +36,7 @@ class TestModelManagerSet(unittest.TestCase):
 
     def test_set_model(self):
         self.assertIsNone(self.mm.model)
-        self.mm.model = keras.models.Sequential()
+        self.mm.model = Sequential()
         self.assertIsNotNone(self.mm.model)
 
     def test_set_description(self):
@@ -59,7 +63,7 @@ class TestModelManagerModelFunctions(unittest.TestCase):
         self.mm.model = self.simple_model
         x = [1, 2, 3, 4, 5]
         y = [1, 2, 3, 4, 5]
-        self.mm.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.01), loss='mse')
+        self.mm.model.compile(optimizer=Adam(learning_rate=0.01), loss='mse')
         self.mm.description = "Test on numeric data, two hidden layers"
 
         self.mm.fit(x=x, y=y, batch_size=1, epochs=3)
@@ -78,7 +82,7 @@ class TestModelManagerModelFunctions(unittest.TestCase):
         self.mm.model = self.simple_model
         x = np.asarray([1, 2, 3, 4, 5])
         y = np.asarray([1, 2, 3, 4, 5])
-        self.mm.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.01), loss='mse')
+        self.mm.model.compile(optimizer=Adam(learning_rate=0.01), loss='mse')
         gen = SimpleGenerator(x, y, 1)
         self.mm.fit(x=gen, steps_per_epoch=1, epochs=3)
 
@@ -93,7 +97,7 @@ class TestModelManagerModelFunctions(unittest.TestCase):
         self.mm.model = self.simple_model
         x = [1, 2, 3, 4, 5]
         y = [1, 2, 3, 4, 5]
-        self.mm.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.01), loss='mse')
+        self.mm.model.compile(optimizer=Adam(learning_rate=0.01), loss='mse')
 
         self.mm.fit(x=x, y=y, batch_size=1, epochs=3)
 
@@ -103,7 +107,7 @@ class TestModelManagerModelFunctions(unittest.TestCase):
         self.mm.model = self.simple_model
         x = [1, 2, 3, 4, 5]
         y = [1, 2, 3, 4, 5]
-        self.mm.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.01), loss='mse')
+        self.mm.model.compile(optimizer=Adam(learning_rate=0.01), loss='mse')
 
         self.mm.fit(x=x, y=y, batch_size=1, epochs=3)
 
@@ -114,7 +118,7 @@ class TestModelManagerModelFunctions(unittest.TestCase):
         self.mm.model = self.simple_model
         x = [1, 2, 3, 4, 5]
         y = [1, 2, 3, 4, 5]
-        self.mm.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.01), loss='mse')
+        self.mm.model.compile(optimizer=Adam(learning_rate=0.01), loss='mse')
         self.mm.save_history = True
         self.mm.fit(x=x, y=y, batch_size=1, epochs=3)
 
@@ -129,7 +133,7 @@ class TestModelManagerModelFunctions(unittest.TestCase):
         self.mm._save_model = True
         x = [1, 2, 3, 4, 5]
         y = [1, 2, 3, 4, 5]
-        self.mm.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.01), loss='mse')
+        self.mm.model.compile(optimizer=Adam(learning_rate=0.01), loss='mse')
         self.mm.save_history = True
         self.mm.fit(x=x, y=y, batch_size=1, epochs=3)
 
@@ -141,7 +145,7 @@ class TestModelManagerModelFunctions(unittest.TestCase):
         self.mm._save_weights = True
         x = [1, 2, 3, 4, 5]
         y = [1, 2, 3, 4, 5]
-        self.mm.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.01), loss='mse')
+        self.mm.model.compile(optimizer=Adam(learning_rate=0.01), loss='mse')
         self.mm.save_history = True
         self.mm.fit(x=x, y=y, batch_size=1, epochs=3)
 
@@ -153,7 +157,7 @@ class TestModelManagerModelFunctions(unittest.TestCase):
         self.mm.model = self.simple_model
         x = [1, 2, 3, 4, 5]
         y = [1, 2, 3, 4, 5]
-        self.mm.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.01), loss=rmse)
+        self.mm.model.compile(optimizer=Adam(learning_rate=0.01), loss=rmse)
 
         self.mm.save_history = True
         self.mm.fit(x=x, y=y, batch_size=1, epochs=3)
@@ -167,16 +171,16 @@ class TestModelManagerModelFunctions(unittest.TestCase):
             self.assertTrue(callable(loss_func))
 
             self.mm.overwrite = True
-            self.mm.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.01), loss=loss_func)
+            self.mm.model.compile(optimizer=Adam(learning_rate=0.01), loss=loss_func)
             self.mm.fit(x=x, y=y, batch_size=1, epochs=3)
 
     def test_callback_saving(self):
         self.mm.model = self.simple_model
         x = [1, 2, 3, 4, 5]
         y = [1, 2, 3, 4, 5]
-        self.mm.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.01), loss='mse')
-        es = keras.callbacks.EarlyStopping(monitor='loss', patience=1, verbose=1)
-        es_2 = keras.callbacks.EarlyStopping(monitor='loss', patience=3, verbose=1)
+        self.mm.model.compile(optimizer=Adam(learning_rate=0.01), loss='mse')
+        es = EarlyStopping(monitor='loss', patience=1, verbose=1)
+        es_2 = EarlyStopping(monitor='loss', patience=3, verbose=1)
 
         self.mm.fit(x=x, y=y, batch_size=1, epochs=3, callbacks=[es, es_2])
 
@@ -196,7 +200,7 @@ class TestModelManagerModelFunctions(unittest.TestCase):
         x = [1, 2, 3, 4, 5]
         y = [1, 2, 3, 4, 5]
         val = (np.array([2, 3, 4, 1]), np.array([0.7, 1, 3, 0.5]))
-        self.mm.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.01), loss='mse')
+        self.mm.model.compile(optimizer=Adam(learning_rate=0.01), loss='mse')
         self.mm.fit(x=x, y=y, validation_data=val, batch_size=1, epochs=3)
         json_path = os.path.join(self.test_path, self.mm.timestamp, "config.json")
         self.assertTrue(os.path.isfile(json_path))
@@ -204,6 +208,25 @@ class TestModelManagerModelFunctions(unittest.TestCase):
         with open(json_path, 'r') as json_file:
             json_config = json.load(json_file)
             self.assertTrue("validation_data" in json_config)
+
+    def test_callback_save_path(self):
+        self.mm.model = self.simple_model
+        x = [1, 2, 3, 4, 5]
+        y = [1, 2, 3, 4, 5]
+        val = (np.array([2, 3, 4, 1]), np.array([0.7, 1, 3, 0.5]))
+        self.mm.model.compile(optimizer=Adam(learning_rate=0.01), loss='mse')
+        tb = TensorBoard(log_dir=self.mm.callback_log_path)
+        self.mm.fit(x=x, y=y, validation_data=val, batch_size=1, epochs=3, callbacks=[tb])
+
+        json_path = os.path.join(self.test_path, self.mm.timestamp, "config.json")
+        self.assertTrue(os.path.isfile(json_path))
+
+        with open(json_path, 'r') as json_file:
+            json_config = json.load(json_file)
+            self.assertTrue("callbacks" in json_config)
+            deserialized_callbacks = deserialize_function(json_config["callbacks"])
+            self.assertTrue(deserialized_callbacks[0].log_dir ==  self.mm.callback_log_path)
+
 
 
 if __name__ == '__main__':

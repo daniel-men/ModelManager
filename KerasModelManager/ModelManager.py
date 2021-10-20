@@ -1,13 +1,14 @@
+from __future__ import annotations
+
 import pickle
 import json
-import datetime
 import glob
 import os
 
-from .utils import ConfigurationAlreadyExistsError, serialize_function, deserialize_function, prepare_for_json
+from .utils import ConfigurationAlreadyExistsError, create_timestamp, serialize_function, deserialize_function, prepare_for_json
 
 class ModelManager:
-    def __init__(self, log_dir, model=None, save_history=False, save_weights=False, save_model=False):
+    def __init__(self, log_dir: str, model=None, save_history : bool = False, save_weights : bool = False, save_model: bool = False):
         self._log_dir = log_dir
         self._model = model
         self.key_params = {}
@@ -17,18 +18,20 @@ class ModelManager:
         self.overwrite = False
         self._save_path = None
         self._timestamp = None
+        self.fit_has_been_run = False
 
         if not os.path.exists(self._log_dir):
             os.mkdir(self._log_dir)
 
-    def create_timestamp(self):
+    def new_timestamp(self) -> str:
         """Creates a new timestamp string
 
         Returns:
             [String]: [timestamp]
         """
-        self._timestamp = "{}".format(datetime.datetime.now()).replace(" ", "_").replace(":", "_").replace(".", "_")
+        self._timestamp = create_timestamp()
         return self._timestamp
+
 
     def _fit(self, kwargs):
         """[summary]
@@ -36,7 +39,8 @@ class ModelManager:
         Args:
             kwargs ([type]): [description]
         """
-        self.create_timestamp()
+        if self.fit_has_been_run:
+            self.new_timestamp()
         self.save_path
         self.get_compile_params()
         self.get_fit_params(kwargs)
@@ -57,6 +61,8 @@ class ModelManager:
         if self._save_weights:
             self.model.save_weights(os.path.join(self.log_dir, self.timestamp, "weights.h5"))
 
+        self.fit_has_been_run = True
+
     def fit(self, **kwargs):
         """Wrapper for Sequential.fit()
         """
@@ -76,13 +82,13 @@ class ModelManager:
             self.key_params["loss"] = self.model.loss
 
     @property
-    def timestamp(self):
+    def timestamp(self) -> str | None:
         if self._timestamp is None:
-            self.create_timestamp()
+            self._timestamp = self.new_timestamp()
         return self._timestamp
 
     @property
-    def save_path(self):
+    def save_path(self) -> str:
         if self._save_path is None or self.timestamp not in self._save_path:
             self._save_path = os.path.join(self.log_dir, self.timestamp)
         
@@ -90,6 +96,10 @@ class ModelManager:
             os.mkdir(self._save_path)
         
         return self._save_path
+
+    @property
+    def callback_log_path(self) -> str:
+        return os.path.join(self.save_path, "logs")
 
     @property
     def save_history(self):

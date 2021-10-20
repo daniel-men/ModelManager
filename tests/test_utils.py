@@ -1,8 +1,7 @@
-import keras
-from keras.models import Sequential
-from keras.layers import Dense
-import keras.backend as K
-from keras.utils import Sequence
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+import tensorflow.keras.backend as K
+from tensorflow.keras.utils import Sequence
 import numpy as np
 
 def simple_model():
