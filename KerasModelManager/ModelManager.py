@@ -1,4 +1,3 @@
-from __future__ import annotations
 
 import pickle
 import json
@@ -82,7 +81,7 @@ class ModelManager:
             self.key_params["loss"] = self.model.loss
 
     @property
-    def timestamp(self) -> str | None:
+    def timestamp(self) -> str:
         if self._timestamp is None:
             self._timestamp = self.new_timestamp()
         return self._timestamp
