@@ -41,9 +41,9 @@ class TestModelManagerSet(unittest.TestCase):
 
     def test_set_description(self):
         self.assertIsNone(self.mm.description)
-
-        self.mm.description = "Test Run Model 123"
-        self.assertEqual(self.mm.description, "Test Run Model 123")
+        description = "Test Run Model 123"
+        self.mm.description = description
+        self.assertEqual(self.mm.description, description)
 
 
 class TestModelManagerModelFunctions(unittest.TestCase):
