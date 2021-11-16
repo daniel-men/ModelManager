@@ -1,12 +1,26 @@
-import pickle
-import json
 import glob
+import json
 import os
+import pickle
 
-from .utils import ConfigurationAlreadyExistsError, create_timestamp, serialize_function, deserialize_function, prepare_for_json
+from tensorflow.keras.utils import Sequence
+
+from python_utility_functions import mkdir, create_timestamp
+
+from .utils import (ConfigurationAlreadyExistsError,
+                    deserialize_function, prepare_for_json, serialize_function)
+
 
 class ModelManager:
     def __init__(self, log_dir: str, model=None, save_history : bool = False, save_weights : bool = False, save_model: bool = False):
+        """
+        Args:
+            log_dir (str): Path to the parent directory where all training runs will be stored.
+            model ([type], optional): Keras Model. Defaults to None.
+            save_history (bool, optional): [description]. Defaults to False.
+            save_weights (bool, optional): [description]. Defaults to False.
+            save_model (bool, optional): [description]. Defaults to False.
+        """
         self._log_dir = log_dir
         self._model = model
         self.key_params = {}
@@ -18,8 +32,7 @@ class ModelManager:
         self._timestamp = None
         self.fit_has_been_run = False
 
-        if not os.path.exists(self._log_dir):
-            os.mkdir(self._log_dir)
+        mkdir(self._log_dir)
 
     def new_timestamp(self) -> str:
         """Creates a new timestamp string
@@ -54,10 +67,10 @@ class ModelManager:
             self.save_history_pickle(history)
 
         if self._save_model:
-            self.model.save(os.path.join(self.log_dir, self.timestamp, "model.h5"))
+            self.model.save(os.path.join(self.save_path, "model.h5"))
 
         if self._save_weights:
-            self.model.save_weights(os.path.join(self.log_dir, self.timestamp, "weights.h5"))
+            self.model.save_weights(os.path.join(self.save_path, "weights.h5"))
 
         self.fit_has_been_run = True
 
@@ -67,6 +80,8 @@ class ModelManager:
         self._fit(kwargs)
 
     def get_compile_params(self):
+        """Read key parameters from the model instance.
+        """
         optimizer_config = self.model.optimizer.get_config()
         self.key_params["optimizer"] = optimizer_config
         self.key_params["optimizer"]["learning_rate"] = self.model.optimizer.lr.numpy()
@@ -81,6 +96,11 @@ class ModelManager:
 
     @property
     def timestamp(self) -> str:
+        """Create a new timestamp if needed or return the current timestamp.
+
+        Returns:
+            str: [description]
+        """
         if self._timestamp is None:
             self._timestamp = self.new_timestamp()
         return self._timestamp
@@ -148,6 +168,8 @@ class ModelManager:
         """
         self.key_params["epochs"] = kwargs["epochs"]
 
+        self.key_params['model_summary'] = self.model.summary()
+
         if "batch_size" in kwargs:
             self.key_params["batch_size"] = kwargs["batch_size"]
         else:
@@ -156,7 +178,7 @@ class ModelManager:
         if "callbacks" in kwargs:
             self.key_params["callbacks"] = serialize_function(kwargs["callbacks"])
 
-        if "validation_data" in kwargs:
+        if "validation_data" in kwargs and not isinstance(kwargs['validation_data'], Sequence):
             self.validation_data = kwargs["validation_data"]
             validation_data_path = os.path.join(self.save_path, "validation_data.p")
             with open(validation_data_path, 'wb') as pickle_file:
@@ -180,8 +202,9 @@ class ModelManager:
             ConfigurationAlreadyExistsError: Raised if the current parameter configuration had already been run before
         """
         for folder in glob.glob(os.path.join(self.log_dir, "*")):
-            if os.path.isdir(folder) and not self.save_path == folder:
-                with open(os.path.join(folder, "config.json")) as conf_file:
+            other_config_path = os.path.join(folder, "config.json")
+            if os.path.isdir(folder) and not self.save_path == folder and os.path.isfile(other_config_path):
+                with open(other_config_path) as conf_file:
                     existing_conf = json.load(conf_file)
                     existing_conf = json.dumps(existing_conf)
                     if existing_conf == json_conf and not self.overwrite:

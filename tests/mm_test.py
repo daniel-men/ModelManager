@@ -10,7 +10,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.optimizers import Adam
 import numpy as np
-from tensorflow.python.keras.callbacks import TensorBoard
+from tensorflow.python.keras.callbacks import ReduceLROnPlateau, TensorBoard
 
 from KerasModelManager.ModelManager import ModelManager, ConfigurationAlreadyExistsError
 from KerasModelManager.utils import deserialize_function
@@ -167,12 +167,12 @@ class TestModelManagerModelFunctions(unittest.TestCase):
         
         with open(json_path, 'r') as json_file:
             json_config = json.load(json_file)
-            loss_func = deserialize_function(json_config["loss"])
-            self.assertTrue(callable(loss_func))
+        loss_func = deserialize_function(json_config["loss"])
+        self.assertTrue(callable(loss_func))
 
-            self.mm.overwrite = True
-            self.mm.model.compile(optimizer=Adam(learning_rate=0.01), loss=loss_func)
-            self.mm.fit(x=x, y=y, batch_size=1, epochs=3)
+        self.mm.overwrite = True
+        self.mm.model.compile(optimizer=Adam(learning_rate=0.01), loss=loss_func)
+        self.mm.fit(x=x, y=y, batch_size=1, epochs=3)
 
     def test_callback_saving(self):
         self.mm.model = self.simple_model
@@ -181,8 +181,9 @@ class TestModelManagerModelFunctions(unittest.TestCase):
         self.mm.model.compile(optimizer=Adam(learning_rate=0.01), loss='mse')
         es = EarlyStopping(monitor='loss', patience=1, verbose=1)
         es_2 = EarlyStopping(monitor='loss', patience=3, verbose=1)
+        reducer = ReduceLROnPlateau(patience=3)
 
-        self.mm.fit(x=x, y=y, batch_size=1, epochs=3, callbacks=[es, es_2])
+        self.mm.fit(x=x, y=y, batch_size=1, epochs=3, callbacks=[es, es_2, reducer])
 
         json_path = os.path.join(self.test_path, self.mm.timestamp, "config.json")
         self.assertTrue(os.path.isfile(json_path))
@@ -190,7 +191,7 @@ class TestModelManagerModelFunctions(unittest.TestCase):
         with open(json_path, 'r') as json_file:
             json_config = json.load(json_file)
             self.assertTrue("callbacks" in json_config)
-            self.assertTrue(len(json_config["callbacks"]) == 2)
+            self.assertTrue(len(json_config["callbacks"]) == 3)
             deserialized_callbacks = deserialize_function(json_config["callbacks"])
             self.mm.overwrite = True
             self.mm.fit(x=x, y=y, batch_size=1, epochs=3, callbacks=deserialized_callbacks)
