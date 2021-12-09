@@ -44,7 +44,7 @@ class ModelManager:
         return self._timestamp
 
 
-    def _fit(self, kwargs):
+    def _fit(self, kwargs) -> None:
         """[summary]
 
         Args:
@@ -52,16 +52,17 @@ class ModelManager:
         """
         if self.fit_has_been_run:
             self.new_timestamp()
-        self.save_path
+        
         self.get_compile_params()
         self.get_fit_params(kwargs)
 
         prepared_params = prepare_for_json(self.key_params)
         self.check_for_existing_runs(json.dumps(prepared_params))
 
-        self.log()
-
         history = self.model.fit(**kwargs)
+
+        self.save_path
+        self.log()
  
         if self.save_history:
             self.save_history_pickle(history)
@@ -120,7 +121,7 @@ class ModelManager:
         return os.path.join(self.save_path, "logs")
 
     @property
-    def save_history(self):
+    def save_history(self) -> bool:
         return self._save_history
 
     @save_history.setter
@@ -166,24 +167,30 @@ class ModelManager:
         Arguments:
             kwargs {[type]} -- [description]
         """
-        self.key_params["epochs"] = kwargs["epochs"]
+        
+        _kwargs = kwargs.copy()
 
-        self.key_params['model_summary'] = self.model.summary()
+        self.key_params["epochs"] = _kwargs["epochs"]
 
-        if "batch_size" in kwargs:
-            self.key_params["batch_size"] = kwargs["batch_size"]
+        #self.key_params['model_summary'] = self.model.summary()
+
+        if "batch_size" in _kwargs:
+            self.key_params["batch_size"] = _kwargs["batch_size"]
         else:
             self.key_params["batch_size"] = 32
 
-        if "callbacks" in kwargs:
-            self.key_params["callbacks"] = serialize_function(kwargs["callbacks"])
+        if "callbacks" in _kwargs:
+            self.key_params["callbacks"] = [serialize_function(f) for f in _kwargs["callbacks"]]
 
-        if "validation_data" in kwargs and not isinstance(kwargs['validation_data'], Sequence):
-            self.validation_data = kwargs["validation_data"]
-            validation_data_path = os.path.join(self.save_path, "validation_data.p")
-            with open(validation_data_path, 'wb') as pickle_file:
-                pickle.dump(kwargs["validation_data"], pickle_file)
-            self.key_params["validation_data"] = validation_data_path
+        if "validation_data" in _kwargs:
+            if not isinstance(_kwargs['validation_data'], Sequence):
+                self.validation_data = _kwargs["validation_data"]
+                validation_data_path = os.path.join(self.save_path, "validation_data.p")
+                with open(validation_data_path, 'wb') as pickle_file:
+                    pickle.dump(_kwargs["validation_data"], pickle_file)
+                self.key_params["validation_data"] = validation_data_path
+            else:
+                _kwargs.pop('validation_data')
         
         opt_params = ["class_weight", "sample_weight"]
         
@@ -203,7 +210,7 @@ class ModelManager:
         """
         for folder in glob.glob(os.path.join(self.log_dir, "*")):
             other_config_path = os.path.join(folder, "config.json")
-            if os.path.isdir(folder) and not self.save_path == folder and os.path.isfile(other_config_path):
+            if os.path.isdir(folder) and os.path.isfile(other_config_path):
                 with open(other_config_path) as conf_file:
                     existing_conf = json.load(conf_file)
                     existing_conf = json.dumps(existing_conf)

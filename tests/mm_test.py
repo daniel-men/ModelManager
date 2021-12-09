@@ -192,7 +192,7 @@ class TestModelManagerModelFunctions(unittest.TestCase):
             json_config = json.load(json_file)
             self.assertTrue("callbacks" in json_config)
             self.assertTrue(len(json_config["callbacks"]) == 3)
-            deserialized_callbacks = deserialize_function(json_config["callbacks"])
+            deserialized_callbacks = [deserialize_function(f) for f in json_config["callbacks"]]
             self.mm.overwrite = True
             self.mm.fit(x=x, y=y, batch_size=1, epochs=3, callbacks=deserialized_callbacks)
 
@@ -225,7 +225,7 @@ class TestModelManagerModelFunctions(unittest.TestCase):
         with open(json_path, 'r') as json_file:
             json_config = json.load(json_file)
             self.assertTrue("callbacks" in json_config)
-            deserialized_callbacks = deserialize_function(json_config["callbacks"])
+            deserialized_callbacks = [deserialize_function(f) for f in json_config["callbacks"]]
             self.assertTrue(deserialized_callbacks[0].log_dir ==  self.mm.callback_log_path)
 
 

@@ -1,3 +1,4 @@
+from typing import Any, Callable, List
 import dill
 import json
 import numpy as np
@@ -7,33 +8,25 @@ from datetime import datetime
 def create_timestamp() -> str:
     return "{}".format(datetime.now()).replace(" ", "_").replace(":", "_").replace(".", "_")
 
-def serialize_function(func):
+
+def serialize_function(func: Callable) -> str:
     """Serialize a function to a list of ints represnting a byte sequence
 
     Arguments:
-        func {[function]} -- function of list of functions
+        func {[function]} -- function
     """
-    def _serialize(f):
-        return list(dill.dumps(func))
+    return json.dumps(list(dill.dumps(func)))
 
-    if isinstance(func, list):
-        return [_serialize(f) for f in func]
-    else:
-        return _serialize(func)
 
-def deserialize_function(func_str):
+def deserialize_function(func_str: str) -> Any:
     """Deserialize a  string of list of ints to a function
 
     Arguments:
-        func_str {[string or list of strings]} -- String or list of strings
+        func_str {[string]} -- String
     """
-    def _deserialize(f_s):
-        return dill.loads(bytearray(f_s))
+    return dill.loads(bytearray(json.loads(func_str)))
+    #return dill.loads(bytearray(func_str))
 
-    if all([isinstance(f_s, list) for f_s in func_str]):    
-        return [_deserialize(f_s) for f_s in func_str][0]
-    else:
-        return _deserialize(func_str)
 
 def prepare_for_json(params):
     for key in params:
@@ -43,6 +36,9 @@ def prepare_for_json(params):
             params[key] = round(params[key].tolist(), digits)
         if type(params[key]) == dict:
             params[key] = prepare_for_json(params[key])
+        if type(params[key]).__name__ == '_DictWrapper':
+            # Hack to prevent tensorflow wrapped dict class for empty dicts which is unfit for JSON
+            params[key] = {}
     
     return params
 
