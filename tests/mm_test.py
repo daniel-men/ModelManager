@@ -4,6 +4,7 @@ import shutil
 import json
 import glob
 import pickle
+import time
 from tensorflow.keras import callbacks
 
 from tensorflow.keras.models import Sequential
@@ -110,7 +111,7 @@ class TestModelManagerModelFunctions(unittest.TestCase):
         self.mm.model.compile(optimizer=Adam(learning_rate=0.01), loss='mse')
 
         self.mm.fit(x=x, y=y, batch_size=1, epochs=3)
-
+        time.sleep(3) # Necessary to ensure different timestamp between runs
         self.mm.fit(x=x, y=y, batch_size=1, epochs=5)
         self.assertTrue(len(glob.glob(os.path.join(self.test_path, "*"))) == 2)
 
